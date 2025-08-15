@@ -24,11 +24,11 @@ def mask_animal(img):
 	mask = (mdist_img > threshold_val).astype(np.uint8) * 255
 	eroded = cv2.erode(mask, kernel)
 	closed = cv2.dilate(eroded, kernel)
-	cv2.imwrite("images/mask_animal.jpg", closed)
+	cv2.imwrite("mask_animal.jpg", closed)
 	return closed
 
 def shape_detection(org):
-	img = cv2.imread("images/mask_animal.jpg")
+	img = cv2.imread("mask_animal.jpg")
 	grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	ret, thresh = cv2.threshold(grey, 0.9, 1, 0)
 	contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -36,7 +36,7 @@ def shape_detection(org):
 	return (contour_sorted)
 
 def shape_properties(contour):
-	return np.round(cv2.contourArea(contour),2), np.round(cv2.arcLength(contour, True), 2)
+	return cv2.contourArea(contour), cv2.arcLength(contour, True)
 
 def image_properties(org):
 	contours = shape_detection(org)
@@ -45,18 +45,6 @@ def image_properties(org):
 		area, perimeter = shape_properties(contours[i])
 		parameter[i] = (cv2.moments(contours[i]), {"Area": area}, {"Perimeter": perimeter})
 	return parameter
-
-def hu_moments(moments):
-	i1 = moments["nu20"] + moments["nu02"]
-	i2 = (moments["nu20"] - moments["nu02"]) ** 2 + 4 * (moments["nu11"] ** 2)
-	i3 = (moments["nu30"] - 3 * moments["nu12"]) ** 2 + (3 * moments["nu21"] - moments["nu03"]) ** 2
-	i4 = (moments["nu30"] + moments["nu12"]) ** 2 + (moments["nu21"] + moments["nu03"]) ** 2
-	i5 = (moments["nu30"] - 3*moments["nu12"]) * (moments["nu30"] + moments["nu12"]) * ((moments["nu30"] + moments["nu12"]) ** 2 - 3 * (moments["nu21"] - moments["nu03"]) ** 2)
-	i5 += (3*moments["nu21"] - moments["nu03"]) * (moments["nu21"] + moments["nu03"]) * (3 * (moments["nu30"] + moments["nu12"]) ** 2 - (moments["nu21"] + moments["nu03"] ** 2))
-	i6 = (moments["nu20"] - moments["nu02"]) * ((moments["nu30"] + moments["nu12"]) ** 2 - (moments["nu21"] + moments["nu03"] ** 2)) + 4 * moments["nu11"] * (moments["nu30"] + moments["nu12"]) * (moments["nu21"] + moments["nu03"])
-	i7 = (3*moments["nu21"] - moments["nu03"]) * (moments["nu21"] + moments["nu03"]) * ((moments["nu30"] + moments["nu12"]) ** 2 - 3 * (moments["nu21"] + moments["nu03"] ** 2))
-	i7 -= (moments["nu30"] - 3*moments["nu12"]) * (moments["nu21"] + moments["nu03"]) * (3 * (moments["nu30"] + moments["nu12"]) ** 2 - (moments["nu21"] + moments["nu03"] ** 2))
-	return (i1, i2, i3, i4, i5, i6, i7)
 
 def get_label(key):
 	if "antilope" in key:
@@ -127,11 +115,11 @@ def animal_prediction(data, label):
 	scaler = StandardScaler()
 	data_scaled = scaler.fit_transform(data)
 	svm.fit(data_scaled, label)
-	img_pred = os.listdir("images/capture_19")
+	img_pred = os.listdir("capture_19")
 	pred_para = np.ndarray(shape=(1,2))
 	for i in img_pred:
 		pred = np.zeros(shape=(5,1))
-		img_to_pred = cv2.imread(os.path.join("images/capture_19", i))
+		img_to_pred = cv2.imread(os.path.join("capture_19", i))
 		if img_to_pred is None:
 			continue
 		mask_animal(img_to_pred)
@@ -152,11 +140,11 @@ def animal_prediction(data, label):
 		cv2.waitKey(-1)
 
 if __name__ == "__main__":
-	imgs = os.listdir("images/animal")
+	imgs = os.listdir("animal")
 	params = {}
 	for i, file_name in enumerate(imgs):
 		if file_name != "gps_locations.log" and file_name != ".DS_Store":
-			img = cv2.imread(os.path.join("images/animal", file_name))
+			img = cv2.imread(os.path.join("animal", file_name))
 			if img is None:
 				raise ValueError ("img is none")
 			mask = mask_animal(img)
